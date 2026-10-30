@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Simulador PCCS AMC — estimativa não oficial</title><style>
+:root{--navy:#12304a;--blue:#1769aa;--light:#f2f6fa;--line:#d7e0e8;--text:#1d2935}*{box-sizing:border-box}body{margin:0;background:var(--light);color:var(--text);font:16px/1.45 Arial,sans-serif}.wrap{max-width:1000px;margin:auto;padding:14px}.hero{background:var(--navy);color:#fff;padding:22px;border-radius:15px}.hero h1{margin:0 0 6px;font-size:clamp(24px,5vw,34px)}.notice,.card{border-radius:12px;padding:15px;margin:14px 0}.notice{background:#fff4d6;border:1px solid #e8c96b}.card{background:white;border:1px solid var(--line)}h2{margin:0 0 14px;color:var(--navy);font-size:20px}.grid,.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{min-width:0}label{display:block;font-weight:bold;font-size:14px;margin-bottom:5px}input,select{width:100%;min-height:44px;padding:10px;border:1px solid #aebdca;border-radius:8px;background:#fff;font:inherit}small,.hint,footer{font-size:13px;color:#536575}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:8px;padding:12px 16px;font-weight:bold;font-size:15px}.primary{background:var(--blue);color:white}.secondary{background:#e8eef4;color:var(--navy)}.tablewrap{overflow-x:auto} @media(max-width:640px){.tablewrap:has(#resultado){overflow-x:visible} .tablewrap:has(#resultado) table{min-width:0;width:100%}}table{border-collapse:collapse;width:100%;min-width:600px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{background:#edf3f8;color:var(--navy)}.total{font-weight:bold;background:#f3f8fc}.metric{border:1px solid var(--line);padding:12px;border-radius:9px;background:#fbfdff}.metric span{display:block;color:#536575;font-size:13px}.metric strong{font-size:18px;color:var(--navy)}footer{padding:10px 2px 24px}@media(max-width:640px){.grid,.metrics{grid-template-columns:1fr}.wrap{padding:10px}}
+
+@media(max-width:640px){
+ .wrap{padding:10px}.hero{padding:18px}.card{padding:16px}
+ #resultado tr{display:block;border:1px solid var(--line);border-radius:10px;margin:0 0 10px;padding:8px;background:#fff}
+ #resultado td{display:flex;justify-content:space-between;gap:12px;padding:6px 4px;border:0;text-align:right;white-space:normal}
+ #resultado td:first-child{font-weight:700;text-align:left;border-bottom:1px solid var(--line);display:block}
+ #resultado td:not(:first-child)::before{content:attr(data-label);font-weight:600;text-align:left;color:#526170}
+ #resultado tr th{display:none}
+ #horas{grid-template-columns:1fr!important}
+ #tabelaPCCS td,#tabelaPCCS th{font-size:13px;padding:8px;white-space:nowrap}
+}
+
+.resultado-etapa td:nth-child(2){background:#e7effb}
+.resultado-etapa td:nth-child(3){background:#fff1d2}
+.resultado-etapa td:nth-child(4){background:#dff3e5}
+#resultado tr.total td{font-weight:800} #resultado tr.total:nth-last-child(3) td{background:#e7effb!important} #resultado tr.total:nth-last-child(2) td{background:#fff1d2!important} #resultado tr.total:last-child td{background:#dff3e5!important;color:#17623a}
+#erroValidacao{display:none;background:#fff0f0;border:1px solid #d66;border-radius:8px;padding:12px;color:#8b1e1e;margin-top:12px;font-weight:bold}
+#resultadoPCCS .metric:last-child{background:#dff3e5;border-color:#86c99a}
+#resultadoPCCS .metric:last-child strong{color:#17623a}
+#horas .metric:nth-child(16),#horas .metric:nth-child(27),#horas .metric:nth-child(28){background:#e1f3e6!important;border-color:#8fc8a0!important}
+#horas .metric:nth-child(16) strong,#horas .metric:nth-child(27) strong,#horas .metric:nth-child(28) strong{color:#17623a;font-weight:800}
+
+
+#tabelaResultado{min-width:0;width:100%;table-layout:fixed}
+#tabelaResultado th,#tabelaResultado td{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:640px){
+ #tabelaResultado{display:block;width:100%;min-width:0}
+ #tabelaResultado thead{display:none}
+ #tabelaResultado tbody{display:block;width:100%}
+ #tabelaResultado tr{display:block;width:100%;border:1px solid var(--line);border-radius:10px;margin:0 0 12px;padding:8px;background:#fff}
+ #tabelaResultado td{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;width:100%;padding:8px 4px;border:0;text-align:right;white-space:normal;overflow-wrap:anywhere}
+ #tabelaResultado td:first-child{display:block;font-weight:700;text-align:left;border-bottom:1px solid var(--line);margin-bottom:4px}
+ #tabelaResultado td:not(:first-child)::before{content:attr(data-label);font-weight:600;text-align:left;color:#526170;flex:1}
+ #tabelaResultado td:not(:first-child){flex:1}
+ #tabelaResultado tr.total td{font-weight:800}
+}
+
+#resumoPrincipal{grid-template-columns:1fr;gap:10px}
+.etapa-destaque{background:#174A75!important;border:2px solid #F2B84B!important;color:#fff!important;box-shadow:0 4px 12px rgba(23,74,117,.18)}
+.etapa-destaque span,.etapa-destaque strong,.etapa-destaque small{color:#fff!important}
+.etapa-destaque strong{font-size:1.6rem!important}
+.etapa-destaque small{display:block;margin-top:5px;opacity:.92}
+#resumoPrincipal .metric{padding:14px}
+#resumoPrincipal .metric strong{font-size:1.35rem}
+#detalhesResumo summary{list-style:disclosure-closed}
+#detalhesResumo[open]>summary{margin-bottom:8px}
+@media(min-width:641px){#resumoPrincipal{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#resumoComExtras{display:none!important}
+#composicaoEtapa{display:flex;flex-direction:column;gap:10px}
+#composicaoEtapa .metric{width:100%;display:block;padding:13px 16px;border:2px solid #9bbbd5;background:#eaf3ff}
+#composicaoEtapa .metric:nth-child(1){background:#e7effb;border-color:#91b5e5}
+#composicaoEtapa .metric:nth-child(2){background:#fff1d2;border-color:#e5c879}
+#composicaoEtapa .metric:nth-child(3){background:#e8e2ff;border-color:#aaa0e8}
+#composicaoEtapa .metric:nth-child(4){background:#ffe2ed;border-color:#e59ab7}
+#composicaoEtapa .metric:nth-child(5){background:#dff3e5;border-color:#91cba4}
+#composicaoEtapa .metric:nth-child(6){background:#ffeadb;border-color:#e9b08e}
+#composicaoEtapa .metric:nth-child(7){background:#e0f5f5;border-color:#8acaca}
+#composicaoEtapa .metric:nth-child(8){background:#f3e6ff;border-color:#c5a0e6}
+#composicaoEtapa .metric:nth-child(9){background:#fff0c9;border-color:#e2c36f}
+#composicaoEtapa .metric:nth-child(10){background:#d8f2df;border-color:#7ec494}
+#composicaoEtapa .metric:nth-child(11){background:#e7effb;border-color:#91b5e5}
+#composicaoEtapa .metric:nth-child(12){background:#ffe5d9;border-color:#e8a48a}
+#composicaoEtapa .metric:nth-child(13){background:#e8e2ff;border-color:#aaa0e8}
+#composicaoEtapa .metric:nth-child(14){background:#ffebf1;border-color:#e59ab7}
+#composicaoEtapa .metric:nth-child(15){background:#d4f0dc;border-color:#68b882}
+#composicaoEtapa .metric span{font-weight:700;color:#293d50}
+#composicaoEtapa .metric strong{display:block;margin-top:3px;font-size:1.15rem;color:#17334b}
+
+
+.detalhe-opcional{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.detalhe-opcional>summary{cursor:pointer;font-weight:750;font-size:1rem;line-height:1.5;padding:8px 0;color:var(--navy)}
+.detalhe-opcional[open]>summary{margin-bottom:10px}
+#detalheDescontos .metric,#composicaoEtapa .metric,#comparacaoSemExtras .metric{min-width:0}
+#resumoComExtras{display:none!important}
+
+#resumoPrincipal .desconto-destaque{padding:14px;border-width:2px}
+#resumoPrincipal .desconto-destaque span{font-weight:700;color:#25384a}
+#resumoPrincipal .desconto-destaque strong{font-size:1.2rem;color:#182f46}
+#resumoPrincipal .desc-sindifort{background:#fce4ec;border-color:#e88ca8}
+#resumoPrincipal .desc-saude{background:#fff0d6;border-color:#e6b85c}
+#resumoPrincipal .desc-prev{background:#e5e7ff;border-color:#9ba5f2}
+#resumoPrincipal .desc-irrf{background:#ffe0d6;border-color:#ef9a83}
+
+.toggle-panel{min-width:0}
+.toggle-button{display:block;width:100%;text-align:left;background:transparent;color:var(--navy);padding:8px 0;border:0;border-radius:6px;font:inherit;font-weight:750;line-height:1.5;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(23,105,170,.16)}
+.toggle-button::before{content:"▶";display:inline-block;margin-right:7px;font-size:.9em}
+.toggle-button[aria-expanded="true"]::before{content:"▼"}
+.toggle-button:focus-visible{outline:3px solid #f2b84b;outline-offset:3px}
+.toggle-content[hidden]{display:none!important}
+.toggle-content{margin-top:12px}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: #fff !important; color: #172b3a !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .wrap, main.wrap { max-width: none !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
+  .card, section, .metric, .hero, .notice { break-inside: avoid; box-shadow: none !important; }
+  button, .actions, .no-print { display: none !important; }
+  details { display: block !important; }
+  details > * { display: block !important; }
+  summary { list-style: none !important; }
+  input, select { border: 1px solid #aaa !important; color: #111 !important; background: #fff !important; }
+  table { font-size: 9pt !important; }
+  footer { padding-bottom: 0 !important; }
+}
+
+</style></head><body><main class="wrap"><header class="hero"><h1>Simulador PCCS AMC</h1>Simulação individual de remuneração — proposta não oficial</header><div class="actions no-print" style="margin:12px 0 16px"><button class="primary" id="gerarPDF" type="button">📄 Gerar PDF para impressão</button><p id="avisoPDF" class="hint" role="status" style="display:none;margin-top:10px">No Android, escolha Salvar como PDF na tela de impressão.</p></div><div class="notice"><b>Atenção:</b> simulador estimativo. Não representa tabela oficial nem proposta aprovada. Confirme regras e percentuais em fontes oficiais.</div>
+<section class="card" id="enquadramentoPCCS"><h2>1. Novo vencimento-base pelo PCCS — índice 2,65</h2>
+<p class="hint">Esta seção é independente das demais configurações do simulador. Multiplica o vencimento-base atual por 2,65, identifica o valor mais próximo na tabela superior de 240 horas e aplica o avanço de referência conforme a turma de ingresso.</p>
+<div class="grid">
+<div class="field"><label for="baseAtualPCCS">Vencimento-base atual (R$)</label><input id="baseAtualPCCS" min="0.01" placeholder="Informe seu vencimento-base atual" step="0.01" type="number" value=""/></div>
+<div class="field"><label for="indicePCCS">Índice do novo PCCS</label><input id="indicePCCS" min="0" step="0.01" type="number" value="2.65"/></div>
+<div class="field"><label for="turmaPCCS">Turma de ingresso</label><select id="turmaPCCS"><option value="3">2001 a 2004 — avançar 3 referências</option><option selected="" value="1">2010 a 2012 — avançar 1 referência</option><option value="0">Após 2012 — sem avanço adicional</option></select></div>
+</div>
+<div class="metrics" id="resultadoPCCS" style="margin-top:12px"></div>
+<p class="hint">Tabela considerada: somente a tabela superior de 240 horas. As três últimas células da Classe F ficam em branco, conforme solicitado. O enquadramento é uma estimativa baseada na fotografia fornecida, não uma confirmação oficial.</p>
+<div class="tablewrap"><table><thead><tr><th>Referência</th><th>Classe A</th><th>Classe B</th><th>Classe C</th><th>Classe D</th><th>Classe E</th><th>Classe F</th></tr></thead><tbody id="tabelaPCCS"></tbody></table></div>
+</section>
+<section class="card"><h2>2. Dados individuais e gratificações</h2><div class="grid">
+<div class="field"><label for="vb">Novo vencimento-base enquadrado (R$)</label><input id="vb" min="0" readonly="" step="0.01" type="number" value="5907.08"/><small>Preenchido automaticamente pelo cálculo do novo PCCS na seção 1. Para alterar, ajuste o vencimento-base atual, o índice ou a turma de ingresso acima.</small></div>
+<div class="field"><label for="posse">Data de posse</label><input autocomplete="off" id="posse" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA (ex.: 12/09/2002)" type="text" value=""/></div>
+<div class="field"><label for="dataIngresso">Data de ingresso para verificar direito ao anuênio</label><input autocomplete="off" id="dataIngresso" inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA (ex.: 12/09/2002)" type="text" value=""/><small>Ingresso a partir de 01/01/2024: anuênio zerado, conforme a regra informada. Para quem ingressou antes, o sistema estima o percentual pela data de posse.</small></div>
+<div class="field">
+<label for="motociclista">Você é motociclista?</label>
+<select id="motociclista"><option selected="" value="nao">Não</option><option value="sim">Sim</option></select>
+<div id="campoPercentualMoto" style="display:none;margin-top:8px">
+<label for="geeMoto">Percentual GEEF — motociclista</label>
+<select id="geeMoto"><option value="15">15%</option><option value="20">20%</option></select>
+</div>
+</div>
+<div class="field">
+<label for="coordenador">Você é coordenador?</label>
+<select id="coordenador"><option selected="" value="nao">Não</option><option value="sim">Sim</option></select>
+<div id="campoPercentualCoord" style="display:none;margin-top:8px">
+<label for="geeCoord">Percentual GEEF — coordenador</label>
+<input id="geeCoord" max="25" min="25" readonly="" step="1" type="number" value="25"/>
+<small>Para coordenador, o percentual é 25%.</small>
+</div>
+</div>
+<div class="field">
+<label for="recebeITA">Você recebe Gratificação de Incentivo à Titulação (ITA)?</label>
+<select id="recebeITA"><option selected="" value="nao">Não</option><option value="sim">Sim</option></select>
+<div id="campoPercentualITA" style="display:none;margin-top:8px">
+<label for="ita">Percentual de ITA (%)</label>
+<select id="ita">
+<option value="">Selecione o percentual</option>
+<option value="8">8%</option>
+<option value="9">9%</option>
+<option value="10">10%</option>
+<option value="15">15%</option>
+</select>
+</div>
+</div>
+<input id="gee" type="hidden" value="0"/>
+<input id="itaCalculado" type="hidden" value="0"/>
+<div class="field"><label for="gat1">GAT etapa 1 (%)</label><input id="gat1" step="0.1" type="number" value="50"/></div><div class="field"><label for="gat2">GAT etapa 2 (%)</label><input id="gat2" step="0.1" type="number" value="75"/></div><div class="field"><label for="gat3">GAT etapa 3 (%)</label><input id="gat3" step="0.1" type="number" value="100"/></div>
+<div class="field"><label for="anuAtual">Anuênio calculado automaticamente (%)</label><input id="anuAtual" max="25" min="0" readonly="" step="1" type="number" value="16"/><small>Calculado pela data de posse: 1% por ano completo de serviço, com aumento a partir do mês seguinte ao aniversário funcional, limitado a 25%. O percentual é recalculado para cada etapa.</small></div>
+<div class="field"><label for="promocao">Promoção / vantagem fixa (% do VB)</label><input id="promocao" step="0.1" type="number"/></div><div class="field"><label for="progressao">Progressão adicional (% do VB)</label><input id="progressao" step="0.1" type="number"/></div></div></section>
+<section class="card"><h2>3. Etapas e parâmetros</h2><div class="grid"><div class="field"><label for="inflacao27">Inflação aplicada em 2027 (%)</label><input id="inflacao27" step="0.1" type="number"/></div><div class="field"><label for="inflacao28">Inflação adicional em 2028 (%)</label><input id="inflacao28" step="0.1" type="number"/></div><div class="field"><label for="etapaCalculo">Etapa usada para horas e descontos</label><select id="etapaCalculo"><option selected="" value="0">Março/2027 — GAT etapa 1</option><option value="1">Fevereiro/2028 — GAT etapa 2</option><option value="2">Julho/2028 — GAT etapa 3</option></select><small>Ao trocar a etapa, os valores-hora, bruto, descontos e líquido são recalculados com a remuneração regular daquela etapa.</small></div>
+<div class="field"><label for="divisor">Divisor da jornada</label><select id="divisor"><option selected="" value="180">180 horas — cenário proposto</option></select></div><div class="field"><label for="adn">Adicional noturno (%)</label><input id="adn" step="1" type="number" value="20"/></div><div class="field"><label for="he50">Horas extras diurnas/mês</label><input id="he50" min="0" type="number"/></div><div class="field"><label for="hen">Horas extras noturnas/mês</label><input id="hen" min="0" type="number"/></div><div class="field"><label for="hn">Horas noturnas normais/mês</label><input id="hn" min="0" type="number"/></div><div class="field"><label for="familia">Salário-família (R$)</label><input id="familia" inputmode="decimal" placeholder="Ex.: 8,13 ou 0" type="text" value=""/><small>Opcional: informe o valor recebido (ex.: 8,13). Se deixar em branco, o sistema considera 0.</small></div><div class="field"><label for="prev">IPM Previdência (%)</label><input id="prev" min="0" step="0.1" type="number" value="14"/></div>
+<div class="field"><label for="saude">IPM Saúde (%)</label><input id="saude" min="0" step="0.1" type="number" value="2"/></div>
+<div class="field"><label for="sindifort">Sindifort (%)</label><input id="sindifort" min="0" step="0.1" type="number" value="2"/></div>
+<div class="field"><label for="outrosDescontos">Outros descontos fixos (R$)</label><input id="outrosDescontos" min="0" step="0.01" type="number" value="0"/></div>
+<div class="field"><label for="dependentesIR">Dependentes para IRRF</label><input id="dependentesIR" min="0" step="1" type="number" value="0"/></div></div><p class="hint">A etapa de 2027 usa VB × (1 + reajuste geral informado). A etapa de 2028 aplica o reajuste adicional informado sobre o VB de 2027. Na tabela acima, bruto, descontos legais e líquido são estimativas sem horas extras e adicionais variáveis; os cálculos de horas e extras continuam na seção 5.</p><p class="hint">Horas extras diurnas, horas extras noturnas, horas noturnas normais, salário-família, reajustes gerais, promoção e progressão são facultativos. Se deixar qualquer um desses campos em branco, o sistema considera 0. Você pode preencher somente os valores que desejar simular.</p><div id="erroValidacao" role="alert"></div><div class="actions"><button class="primary" id="calcular" type="button">Calcular simulação</button><button class="secondary" id="restaurar" type="button">Restaurar valores sugeridos</button></div></section>
+<section class="card" id="secaoResultado">
+<h2>4. Resultado da etapa selecionada</h2>
+<div class="metrics" id="resumoPrincipal">
+<div class="metric etapa-destaque"><span>📌 ETAPA SELECIONADA</span><strong>Março/2027</strong><small>Valores calculados para esta etapa</small></div>
+<div class="metric" style="background:#e7effb;border-color:#a8c3e8"><span>Bruto com adicionais informados</span><strong>—</strong></div>
+<div class="metric" style="background:#fff1d2;border-color:#e5c879"><span>Descontos totais</span><strong>—</strong></div>
+<div class="metric" style="background:#dff3e5;border-color:#9bcfab"><span>Líquido estimado</span><strong>—</strong></div>
+</div>
+<div id="basesCalculo" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+<h2>Bases de cálculo dos descontos</h2>
+<p class="hint">Confira as bases usadas pelo simulador para cada desconto. São estimativas conforme as regras configuradas.</p>
+<div class="metrics" id="basesCalculoCards"></div>
+</div>
+<div aria-hidden="true" style="display:none"><table id="tabelaResultado"><tbody id="resultado"></tbody></table></div>
+<div aria-hidden="true" class="metrics" id="detalheDescontos" style="display:none"></div>
+<div id="composicaoRemuneracaoVisivel" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+<h2>Composição da remuneração desta etapa</h2>
+<p class="hint">Valores exibidos automaticamente, sem precisar abrir outra opção.</p>
+<div class="metrics composicao-destaque" id="composicaoEtapa"></div>
+</div><section class="card detalhe-opcional toggle-panel" id="comparacaoSalarioAtualToggle">
+<button class="toggle-button" type="button" aria-expanded="false" aria-controls="comparacaoSalarioAtualToggleConteudo">Mostrar salário atual e comparar com o novo PCCS</button>
+<div class="toggle-content" id="comparacaoSalarioAtualToggleConteudo" hidden>
+<p class="hint">A remuneração atual é calculada com o vencimento-base informado na seção 1 e os percentuais atuais que você descreveu. A GEEF atual é de 60% para motociclista e 25% para os demais agentes. A comparação usa o bruto regular estimado da etapa PCCS selecionada, sem salário-família, horas extras, adicionais variáveis ou descontos.</p>
+<h3 style="color:var(--navy);margin:14px 0 8px">Composição do salário de hoje</h3>
+<div class="metrics" id="componentesSalarioAtual"></div>
+<h3 style="color:var(--navy);margin:18px 0 8px">Comparação com o novo PCCS</h3>
+<div class="metrics" id="resumoComparacaoSalarioAtual"></div>
+</div></section><section class="detalhe-opcional toggle-panel" id="comparacaoCenariosToggle">
+<button class="toggle-button" type="button" aria-expanded="false" aria-controls="comparacaoCenariosToggleConteudo">Mostrar comparação: mês normal × férias/licença</button>
+<div class="toggle-content" id="comparacaoCenariosToggleConteudo" hidden>
+<div class="card" id="comparacaoCenariosCard" style="margin-top:16px;background:#f8fbff">
+<h2>Comparação: mês normal × férias/licença</h2>
+<p class="hint">No cenário de férias/licença, o simulador zera horas extras diurnas, horas extras noturnas e adicional noturno normal. Mantém a remuneração regular e recalcula os descontos estimados para esse cenário.</p>
+<h3 style="color:var(--navy);margin:12px 0 8px">Mês normal — com os adicionais informados</h3>
+<div class="metrics" id="cenarioNormal"></div>
+<h3 style="color:var(--navy);margin:18px 0 8px">Férias/licença — sem horas extras e adicional noturno</h3>
+<div class="metrics" id="cenarioFerias"></div>
+<h3 style="color:var(--navy);margin:18px 0 8px">Diferença: mês normal menos férias/licença</h3>
+<div class="metrics" id="diferencaCenarios"></div>
+<p class="hint">Atenção: esta comparação não calcula o adicional constitucional de 1/3 de férias nem regras específicas de cada licença. É uma estimativa mensal sem os adicionais variáveis indicados.</p>
+</div>
+</div></section>
+</section>
+<section class="card toggle-panel" id="consultaHoras"><button class="toggle-button" type="button" aria-expanded="false" aria-controls="consultaHorasConteudo">5. Consultar valores-hora, adicionais e horas extras (opcional)</button><div class="toggle-content" id="consultaHorasConteudo" hidden><div class="metrics" id="horas"></div><p class="hint">A base horária usa a remuneração regular da etapa selecionada, dividida pelo divisor. O adicional noturno normal é calculado somente como adicional por hora × quantidade de horas, sem somar novamente a hora normal. As horas extras diurnas usam adicional de 50%; as extras noturnas usam 50% mais o adicional noturno informado. IPM Previdência: percentual aplicado à remuneração regular da etapa, sem horas extras, adicional noturno e salário-família. IPM Saúde: percentual aplicado ao bruto estimado, excluindo salário-família. Sindifort: percentual aplicado ao vencimento-base da etapa. IRRF conforme a regra solicitada nesta simulação: bruto − salário-família − dedução de R$ 189,59 por dependente − IPM Previdência; aplicar 27,5% e subtrair parcela a deduzir de R$ 908,73. A estimativa não substitui a conferência das regras oficiais aplicáveis.</p></div></section><footer>Simulador independente para estimativas. Os resultados dependem dos dados inseridos e das regras adotadas; não substituem contracheque ou norma oficial.</footer></main>
+<div id="resumoComExtras" style="display:none"><div id="brutoComExtrasCards"></div><div id="brutoComNoturnoCards"></div><div id="liquidoComExtrasCards"></div><div id="liquidoSemNoturnoCards"></div></div>
+<script>
+const $=id=>document.getElementById(id),n=id=>{const raw=String($(id).value??'').trim().replace(/\s/g,'').replace(/\.(?=\d{3}(?:\D|$))/g,'').replace(',','.');const v=Number(raw);return Number.isFinite(v)?v:0},brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v),pformat=v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:2}).format(v)+'%';
+function percentualGEEF(){
+ const moto=$('motociclista').value==='sim';
+ const coord=$('coordenador').value==='sim';
+ if(coord)return 25;
+ if(moto)return Number($('geeMoto').value)||0;
+ return 0;
+}
+function percentualITA(){
+ const el=$('ita');
+ const escolhido=String(el?.value??'').trim();
+ const texto=String(el?.selectedOptions?.[0]?.textContent??'').trim();
+ // Lê tanto o valor interno da opção (ex.: 15) quanto o texto visível (ex.: 15%).
+ const candidato=escolhido!==''?escolhido: texto.replace('%','').trim();
+ const pct=Number(candidato.replace(',','.').replace('%','').trim());
+ return $('recebeITA').value==='sim' && candidato!=='' && Number.isFinite(pct) ? pct : 0;
+}
+function atualizarCondicoes(){
+ $('campoPercentualMoto').style.display=$('motociclista').value==='sim'?'block':'none';
+ $('campoPercentualCoord').style.display=$('coordenador').value==='sim'?'block':'none';
+ $('campoPercentualITA').style.display=$('recebeITA').value==='sim'?'block':'none';
+ // If user chooses coordinator, its fixed 25% takes priority over the motorcycle percentage.
+ if($('coordenador').value==='sim') $('motociclista').value='nao';
+}
+function dataPosseISO(valor){
+ const v=String(valor??'').trim();
+ if(!v) return '';
+ let d,m,a,match;
+ // Aceita data digitada como 17/05/2010, 17-05-2010, 2010-05-17 ou apenas 17052010.
+ if(/^\d{8}$/.test(v)){
+   d=Number(v.slice(0,2)); m=Number(v.slice(2,4)); a=Number(v.slice(4,8));
+ } else if((match=v.match(/^(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})$/))){
+   d=Number(match[1]); m=Number(match[2]); a=Number(match[3]);
+ } else if((match=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))){
+   a=Number(match[1]); m=Number(match[2]); d=Number(match[3]);
+ } else {
+   const dig=v.replace(/\D/g,'');
+   if(/^\d{8}$/.test(dig)){
+     d=Number(dig.slice(0,2)); m=Number(dig.slice(2,4)); a=Number(dig.slice(4,8));
+   } else return '';
+ }
+ if(a<1900||a>2100||m<1||m>12||d<1||d>31) return '';
+ const data=new Date(a,m-1,d,12);
+ if(data.getFullYear()!==a||data.getMonth()!==m-1||data.getDate()!==d) return '';
+ return `${a}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+const tabelaPCCS=[
+ {ref:1,A:4711.81,B:5457.23,C:6320.58,D:7320.51,E:8478.63,F:9819.97},
+ {ref:2,A:4806.05,B:5566.37,C:6446.90,D:7466.92,E:8648.20,F:10016.37},
+ {ref:3,A:4902.17,B:5677.70,C:6575.95,D:7616.26,E:8821.17,F:10216.70},
+ {ref:4,A:5000.21,B:5791.26,C:6707.95,D:7768.58,E:8997.59,F:null},
+ {ref:5,A:5100.21,B:5907.08,C:6841.60,D:7923.05,E:9177.54,F:null},
+ {ref:6,A:5202.22,B:6025.22,C:6978.43,D:8082.43,E:9361.09,F:null}
+];
+function atualizarComparacaoSalarioAtual(novaRemuneracao=null, etapa=''){
+ const areaComponentes=$('componentesSalarioAtual');
+ const areaComparacao=$('resumoComparacaoSalarioAtual');
+ if(!areaComponentes || !areaComparacao) return;
+ const baseTexto=String($('baseAtualPCCS')?.value ?? '').trim();
+ const base=Number(baseTexto)||0;
+ if(!(base>0)){
+  areaComponentes.innerHTML='<p class="hint">Informe o vencimento-base atual na seção 1 para calcular a composição do salário de hoje.</p>';
+  areaComparacao.innerHTML='<p class="hint">Depois de informar o vencimento-base atual, o simulador mostrará aqui a diferença em reais e em porcentagem para a etapa PCCS selecionada.</p>';
+  return;
+ }
+ const ehMotociclista=$('motociclista')?.value==='sim';
+ const percentualGEEFAtual=ehMotociclista?60:25;
+ const arredondaCentavos=v=>Math.round((v+Number.EPSILON)*100)/100;
+ const dataIngressoAtual=dataPosseISO($('dataIngresso')?.value||'');
+ const temDireitoAnuenioAtual=!!dataIngressoAtual && new Date(dataIngressoAtual+'T12:00:00')<new Date('2024-01-01T00:00:00');
+ const dataPosseAtual=dataPosseISO($('posse')?.value||'');
+ const anosAnuenioAtual=(()=>{if(!temDireitoAnuenioAtual||!dataPosseAtual)return 0;const d=new Date(dataPosseAtual+'T12:00:00');if(Number.isNaN(d.getTime()))return 0;let anos=new Date().getFullYear()-d.getFullYear();const aniversario=new Date(new Date().getFullYear(),d.getMonth(),d.getDate(),12);if(aniversario>new Date())anos--;return Math.max(0,Math.min(25,anos));})();
+ const componentes=[
+  ['Vencimento-base atual (100%)',base],
+  ['Gratificação específica (100% do VB)',base],
+  ['Risco de vida (40% do VB)',base*0.40],
+  [`GEEF atual (${percentualGEEFAtual}% do VB)`,base*percentualGEEFAtual/100],
+  [`ITA atual (${percentualITA()}% do VB)`,base*percentualITA()/100],
+  ['GAT atual (94,40% do VB)',base*0.944],
+  [`Anuênio atual (${anosAnuenioAtual}% do VB)`,base*anosAnuenioAtual/100]
+ ].map(([nome,valor])=>({nome,valor:arredondaCentavos(valor)}));
+ const totalAtual=arredondaCentavos(componentes.reduce((acc,item)=>acc+item.valor,0));
+ areaComponentes.innerHTML=componentes.map(item=>`<div class="metric"><span>${item.nome}</span><strong>${brl(item.valor)}</strong></div>`).join('')+
+  `<div class="metric" style="background:#e7effb;border-color:#a8c3e8"><span>REMUNERAÇÃO BRUTA ATUAL ESTIMADA</span><strong>${brl(totalAtual)}</strong></div>`;
+ if(novaRemuneracao===null || !Number.isFinite(Number(novaRemuneracao)) || !(Number(novaRemuneracao)>0)){
+  areaComparacao.innerHTML='<p class="hint">O vencimento-base atual foi calculado. Para comparar com o PCCS, informe/valide os dados do novo enquadramento e execute a simulação.</p>';
+  return;
+ }
+ const novo=Number(novaRemuneracao);
+ const diferenca=arredondaCentavos(novo-totalAtual);
+ const percentual=totalAtual>0?(diferenca/totalAtual)*100:0;
+ const rotuloDiferenca=diferenca>=0?'Aumento bruto estimado por mês':'Redução bruta estimada por mês';
+ const sinalReais=diferenca>0?'+':diferenca<0?'−':'';
+ const sinalPct=percentual>0?'+':percentual<0?'−':'';
+ const estiloVariacao=diferenca>=0?'background:#dff3e5;border-color:#9bcfab':'background:#fff0f0;border-color:#dfaaaa';
+ areaComparacao.innerHTML=[
+  [`Salário bruto atual estimado`,brl(totalAtual)],
+  [`Novo PCCS — ${etapa||'etapa selecionada'}`,brl(novo)],
+  [rotuloDiferenca,`${sinalReais}${brl(Math.abs(diferenca))}`],
+  ['Variação percentual em relação ao salário atual',`${sinalPct}${Math.abs(percentual).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}%`]
+ ].map(([nome,valor],i)=>`<div class="metric"${i===1?' style="background:#e7effb;border-color:#a8c3e8"':i>=2?` style="${estiloVariacao}"`:''}><span>${nome}</span><strong>${valor}</strong></div>`).join('');
+}
+
+function calcEnquadramentoPCCS(){
+  const baseTexto=$('baseAtualPCCS').value.trim();
+  const indiceTexto=$('indicePCCS').value.trim();
+  const base=Number(baseTexto)||0, indice=Number(indiceTexto)||0;
+  const avancar=Number($('turmaPCCS').value)||0;
+  if(baseTexto==='' || indiceTexto==='' || !(base>0) || !(indice>0)){
+    // Não apaga os resultados nem o VB de referência ao abrir o arquivo sem preencher a base atual.
+    // Mantém os valores demonstrativos da etapa para que a seção de horas não fique em branco.
+    $('resultadoPCCS').innerHTML='<div class="metric"><span>Enquadramento PCCS</span><strong>Informe o vencimento-base atual e confirme o índice para calcular seu enquadramento personalizado. Enquanto isso, os valores demonstrativos abaixo usam o vencimento-base de referência.</strong></div>';
+    $('tabelaPCCS').innerHTML=tabelaPCCS.map(l=>`<tr><td>${l.ref}</td>${['A','B','C','D','E','F'].map(c=>`<td>${l[c]==null?'':brl(l[c])}</td>`).join('')}</tr>`).join('');
+    atualizarComparacaoSalarioAtual(null,'');
+    calc();
+    return;
+  }
+  const calculado=base*indice, avancarPCCS=avancar;
+ let melhor=null;
+ // Só considera enquadramentos cuja classe tenha valor disponível após o avanço solicitado.
+ // Isso evita escolher uma célula da Classe F que levaria a uma referência vazia.
+ tabelaPCCS.forEach((linha,i)=>['A','B','C','D','E','F'].forEach(classe=>{
+   const valor=linha[classe];
+   const idx=Math.min(tabelaPCCS.length-1,i+avancar);
+   const valorFinal=tabelaPCCS[idx]?.[classe];
+   if(valor==null || valorFinal==null)return;
+   const dif=Math.abs(valor-calculado);
+   if(!melhor||dif<melhor.dif)melhor={i,classe,valor,dif,ref:linha.ref,idx,valorFinal,refFinal:tabelaPCCS[idx].ref};
+ }));
+ const final=melhor ? {...melhor} : null;
+ const cards=[
+ ['Base atual informado',brl(base)],
+ ['Índice aplicado',indice.toLocaleString('pt-BR',{maximumFractionDigits:2})+' ×'],
+ ['Base após multiplicar por '+indice.toLocaleString('pt-BR',{maximumFractionDigits:2}),brl(calculado)],
+ ['Referência mais próxima antes do avanço',melhor?`Ref. ${melhor.ref} — Classe ${melhor.classe}: ${brl(melhor.valor)}`:'Não encontrada'],
+ ['Diferença para o valor calculado',melhor?brl(melhor.dif):'—'],
+ ['Avanço da turma',avancar+' referência(s)'],
+ ['Novo vencimento-base estimado',final&&final.valorFinal!=null?`Ref. ${final.refFinal} — Classe ${final.classe}: ${brl(final.valorFinal)}`:'Não foi possível encontrar referência com valor disponível após o avanço']
+ ];
+ $('resultadoPCCS').innerHTML=cards.map(([a,b],i)=>`<div class="metric"${i===6?' style="background:#edf5fb;border-color:#9db7ca"':''}><span>${a}</span><strong>${b}</strong></div>`).join('');
+ if(final && final.valorFinal!=null){$('vb').value=final.valorFinal.toFixed(2);calc();}
+ $('tabelaPCCS').innerHTML=tabelaPCCS.map(l=>`<tr><td>${l.ref}</td>${['A','B','C','D','E','F'].map(c=>`<td>${l[c]==null?'':brl(l[c])}</td>`).join('')}</tr>`).join('');
+}
+
+function calcInterno(){
+  // Campos facultativos vazios são tratados como zero por n(), sem alterar o que aparece na tela.
+  if(! $('vb') || String($('vb').value??'').trim()==='' || !(n('vb')>0)){
+    ['resultado','horas','resumoPrincipal','detalheDescontos','basesCalculoCards','composicaoEtapa','comparacaoSemExtras','cenarioNormal','cenarioFerias','diferencaCenarios'].forEach(id=>{if($(id)) $(id).innerHTML='';});
+    if($('resumoComExtras')) $('resumoComExtras').style.display='none';
+    ['brutoComExtrasCards','brutoComNoturnoCards','liquidoComExtrasCards','liquidoSemNoturnoCards'].forEach(id=>{if($(id)) $(id).innerHTML='';});
+    atualizarComparacaoSalarioAtual(null,'');
+    return;
+  }
+  const obrigatorios = [
+    ['baseAtualPCCS','Vencimento-base atual'],['indicePCCS','Índice do novo PCCS'],
+    ['posse','Data de posse'],['gat1','GAT etapa 1'],
+    ['gat2','GAT etapa 2'],['gat3','GAT etapa 3'],['divisor','Divisor da jornada'],
+    ['adn','Adicional noturno'],['prev','IPM Previdência'],
+    ['saude','IPM Saúde'],['sindifort','Sindifort'],['outrosDescontos','Outros descontos fixos'],
+    ['dependentesIR','Dependentes para IRRF']
+  ];
+  const faltantes = obrigatorios.filter(([id]) => $(id).value.trim() === '' || (id==='baseAtualPCCS' && !(Number($(id).value)>0))).map(([,nome]) => nome);
+  // TESTE: validação obrigatória da ITA temporariamente desativada.
+
+  const posseValida=dataPosseISO($('posse').value);
+  // TESTE: data de posse não bloqueia o cálculo nesta versão de diagnóstico.
+  // TESTE: bloqueio por campos obrigatórios temporariamente desativado.
+  $('erroValidacao').style.display='none';
+  $('erroValidacao').textContent='';
+
+  $('erroValidacao').style.display='none';
+  $('erroValidacao').textContent='';
+  const vb=n('vb'),i27=n('inflacao27')/100,i28=n('inflacao28')/100,vb27=vb*(1+i27),vb28=vb27*(1+i28),posse=dataPosseISO($('posse').value);
+ const stages=[{vb:vb27,y:2027,m:3,g:n('gat1'),label:'Março/2027'},{vb:vb28,y:2028,m:2,g:n('gat2'),label:'Fevereiro/2028'},{vb:vb28,y:2028,m:7,g:n('gat3'),label:'Julho/2028'}];
+ const anosCompletos=(dataPosse,dataReferencia)=>{if(!dataPosse)return 0;const d=new Date(dataPosse+'T12:00:00');if(Number.isNaN(d.getTime()))return 0;let anos=dataReferencia.getFullYear()-d.getFullYear();const aniversario=new Date(dataReferencia.getFullYear(),d.getMonth(),d.getDate(),12);if(aniversario>dataReferencia)anos--;return Math.max(0,Math.min(25,anos));};
+ const ingresso=dataPosseISO($('dataIngresso')?.value||'');
+ const temDireitoAnuenio=!!ingresso && new Date(ingresso+'T12:00:00')<new Date('2024-01-01T00:00:00');
+ const data=stages.map(s=>{const dataEtapa=new Date(s.y,s.m-1,1,12),anuPct=temDireitoAnuenio?anosCompletos(posse,dataEtapa):0,gee=s.vb*percentualGEEF()/100,ita=s.vb*percentualITA()/100,gat=s.vb*s.g/100,anu=s.vb*anuPct/100,promocao=s.vb*n('promocao')/100,progressao=s.vb*n('progressao')/100,regular=s.vb+gee+ita+gat+anu+promocao+progressao;return {...s,anuPct,gee,ita,gat,anu,promocao,progressao,regular,bruto:regular+n('familia')}});
+ const dataAtualPosse=posse?new Date(posse+'T12:00:00'):null;let anuAtualCalc=0;if(temDireitoAnuenio && dataAtualPosse&&!Number.isNaN(dataAtualPosse.getTime())){const hoje=new Date();anuAtualCalc=anosCompletos(posse,hoje);}$('anuAtual').value=temDireitoAnuenio?String(anuAtualCalc):'0';
+ const resumida=data.map(o=>{
+  const brutoResumo=o.regular+n('familia');
+  const prevResumo=Math.max(0,o.regular)*Math.max(0,n('prev'))/100;
+  const saudeResumo=Math.max(0,brutoResumo-n('familia'))*Math.max(0,n('saude'))/100;
+  const sindResumo=Math.max(0,o.vb)*Math.max(0,n('sindifort'))/100;
+  const deps=Math.max(0,Math.floor(n('dependentesIR')))*189.59;
+  const baseIRResumo=Math.max(0,brutoResumo-n('familia')-deps-prevResumo);
+  const irResumo=Math.max(0,baseIRResumo*0.275-908.73);
+  const descontosResumo=prevResumo+saudeResumo+sindResumo+irResumo+Math.max(0,n('outrosDescontos'));
+  return {...o,brutoResumo,descontosResumo,liquidoResumo:brutoResumo-descontosResumo};
+});
+const rows=[
+ ['Vencimento-base','vb'],['GEEF','gee'],['ITA','ita'],['GAT','gat'],
+ ['Anuênio (%)','anuPct'],['Anuênio (R$)','anu'],
+ ['Promoção / vantagem fixa','promocao'],['Progressão adicional','progressao'],
+ ['Remuneração regular estimada','regular'],['Salário-família','familia'],
+ ['BRUTO ESTIMADO (sem horas extras)','brutoResumo'],
+ ['DESCONTOS LEGAIS ESTIMADOS','descontosResumo'],
+ ['LÍQUIDO ESTIMADO (sem horas extras)','liquidoResumo']
+];
+$('resultado').innerHTML=rows.map(([label,key])=>{
+ const destaque=['brutoResumo','descontosResumo','liquidoResumo'].includes(key);
+ const valores=resumida.map((o,i)=>`<td data-label="${['Março/2027','Fevereiro/2028','Julho/2028'][i]}">${key==='anuPct'?pformat(o[key]):brl(key==='familia'?n('familia'):o[key])}</td>`).join('');
+ return `<tr class="${destaque?'total':''}"><td>${label}</td>${valores}</tr>`;
+}).join('');
+
+ const heDiurnas=Math.max(0,n('he50')), heNoturnas=Math.max(0,n('hen')), horasNoturnas=Math.max(0,n('hn'));
+ const temExtras=(heDiurnas+heNoturnas+horasNoturnas)>0;
+ const temNoturno=(heNoturnas+horasNoturnas)>0;
+ if($('resumoComExtras')) $('resumoComExtras').style.display=temExtras?'block':'none';
+ if(temExtras){
+   const nomeEtapas=['Março/2027','Fevereiro/2028','Julho/2028'];
+   const calcLiquido=(bruto,etapa)=>{
+     const previdencia=Math.max(0,etapa.regular)*Math.max(0,n('prev'))/100;
+     const saude=Math.max(0,bruto-n('familia'))*Math.max(0,n('saude'))/100;
+     const sindifort=Math.max(0,etapa.vb)*Math.max(0,n('sindifort'))/100;
+     const dedDependentes=Math.max(0,Math.floor(n('dependentesIR')))*189.59;
+     const baseIR=Math.max(0,bruto-n('familia')-dedDependentes-previdencia);
+     const irrf=Math.max(0,baseIR*0.275-908.73);
+     const descontos=previdencia+saude+sindifort+Math.max(0,n('outrosDescontos'))+irrf;
+     return bruto-descontos;
+   };
+   const calculosExtras=data.map((etapa)=>{
+     const horaEtapa=Math.max(0,etapa.regular)/Math.max(1,n('divisor'));
+     const adicionalNoturno=Math.max(0,n('adn'))/100;
+     const totalExtrasDiurnas=horaEtapa*1.5*heDiurnas;
+     const totalAdicionalNoturno=horaEtapa*adicionalNoturno*horasNoturnas;
+     const totalExtrasNoturnas=horaEtapa*1.5*(1+adicionalNoturno)*heNoturnas;
+     const brutoBase=etapa.regular+n('familia');
+     const brutoComExtras=brutoBase+totalExtrasDiurnas+totalAdicionalNoturno+totalExtrasNoturnas;
+     const brutoComNoturno=brutoBase+totalAdicionalNoturno+totalExtrasNoturnas;
+     const brutoSemNoturno=brutoBase+totalExtrasDiurnas;
+     const liquidoComExtras=calcLiquido(brutoComExtras,etapa);
+     const liquidoComNoturno=calcLiquido(brutoComNoturno,etapa);
+     const liquidoSemNoturno=calcLiquido(brutoSemNoturno,etapa);
+     return {...etapa,brutoComExtras,brutoComNoturno,liquidoComExtras,liquidoComNoturno,liquidoSemNoturno};
+   });
+   $('brutoComExtrasCards').innerHTML=calculosExtras.map((v,i)=>`<div class="metric"><span>${nomeEtapas[i]}</span><strong>${brl(v.brutoComExtras)}</strong><small>Inclui ${heDiurnas} h extras diurnas, ${heNoturnas} h extras noturnas e ${horasNoturnas} h noturnas normais.</small></div>`).join('');
+   $('brutoComNoturnoCards').innerHTML=temNoturno?calculosExtras.map((v,i)=>`<div class="metric"><span>${nomeEtapas[i]}</span><strong>${brl(v.brutoComNoturno)}</strong><small>Com adicional noturno; inclui ${heNoturnas} h extras noturnas e ${horasNoturnas} h noturnas normais.</small></div>`).join(''):'<p class="hint">Informe horas noturnas normais ou horas extras noturnas para exibir este quadro.</p>';
+   $('liquidoComExtrasCards').innerHTML=calculosExtras.map((v,i)=>`<div class="metric"><span>${nomeEtapas[i]}</span><strong>${brl(v.liquidoComExtras)}</strong><small>Líquido com as horas e adicionais informados.</small></div>`).join('');
+   $('liquidoSemNoturnoCards').innerHTML=temNoturno?calculosExtras.map((v,i)=>`<div class="metric"><span>${nomeEtapas[i]}</span><strong>${brl(v.liquidoSemNoturno)}</strong><small>Sem adicional noturno; mantém horas extras diurnas informadas.</small></div>`).join(''):'<p class="hint">Sem horas noturnas informadas, o líquido sem adicional noturno é igual ao líquido com os demais adicionais.</p>';
+ } else {
+   $('brutoComExtrasCards').innerHTML='';
+   $('brutoComNoturnoCards').innerHTML='';
+   $('liquidoComExtrasCards').innerHTML='';
+   $('liquidoSemNoturnoCards').innerHTML='';
+ }
+ const idx=Math.min(2,Math.max(0,Math.floor(n('etapaCalculo')))),o=data[idx],hora=Math.max(0,o.regular)/Math.max(1,n('divisor')),ad=Math.max(0,n('adn'))/100,noturna=hora*(1+ad),extraD=hora*1.5,adNot=hora*ad,extraN=hora*1.5*(1+ad),totD=extraD*n('he50'),totHN=adNot*n('hn'),totEN=extraN*n('hen'),bruto=o.regular+n('familia')+totD+totHN+totEN;
+ const descPrev=Math.max(0,o.regular)*Math.max(0,n('prev'))/100,descSaude=Math.max(0,bruto-n('familia'))*Math.max(0,n('saude'))/100,descSind=Math.max(0,o.vb)*Math.max(0,n('sindifort'))/100,descOutros=Math.max(0,n('outrosDescontos')),dependentes=Math.max(0,Math.floor(n('dependentesIR'))),dedDependentes=dependentes*189.59;
+ const baseIR=Math.max(0,bruto-n('familia')-dedDependentes-descPrev),irrf=Math.max(0,baseIR*0.275-908.73),totalDesc=descPrev+descSaude+descSind+descOutros+irrf,liquido=bruto-totalDesc;
+ atualizarComparacaoSalarioAtual(o.regular,o.label);
+ const brutoSemExtrasSemNoturno=o.regular+n('familia');
+ const brutoComAdicionais=bruto;
+ const descSemExtras=descPrev+Math.max(0,brutoSemExtrasSemNoturno-n('familia'))*Math.max(0,n('saude'))/100+descSind+descOutros+Math.max(0,Math.max(0,brutoSemExtrasSemNoturno-n('familia')-dedDependentes-descPrev)*0.275-908.73);
+ const liquidoSemExtras=brutoSemExtrasSemNoturno-descSemExtras;
+ $('resumoPrincipal').innerHTML=`
+  <div class="metric etapa-destaque"><span>📌 ETAPA SELECIONADA</span><strong>${o.label}</strong><small>Todos os valores abaixo são somente desta etapa</small></div>
+  <div class="metric" style="background:#e7effb;border-color:#a8c3e8"><span>Bruto com adicionais informados</span><strong>${brl(brutoComAdicionais)}</strong></div>
+  <div class="metric" style="background:#fff1d2;border-color:#e5c879"><span>Descontos totais</span><strong>${brl(totalDesc)}</strong></div>
+  <div class="metric" style="background:#dff3e5;border-color:#9bcfab"><span>Líquido estimado</span><strong>${brl(liquido)}</strong></div>
+  <div class="metric desconto-destaque desc-sindifort"><span>🔴 Sindifort</span><strong>${brl(descSind)}</strong></div>
+  <div class="metric desconto-destaque desc-saude"><span>🟠 IPM Saúde</span><strong>${brl(descSaude)}</strong></div>
+  <div class="metric desconto-destaque desc-prev"><span>🟣 IPM Previdência</span><strong>${brl(descPrev)}</strong></div>
+  <div class="metric desconto-destaque desc-irrf"><span>🔻 Imposto de Renda (IRRF)</span><strong>${brl(irrf)}</strong></div>`;
+ $('basesCalculoCards').innerHTML=[
+  ['🟣 Base IPM Previdência',brl(o.regular)],
+  ['🔴 Base Sindifort',brl(o.vb)],
+  ['🔻 Base do Imposto de Renda (IRRF)',brl(baseIR)]
+ ].map(([a,b],i)=>`<div class="metric" style="background:${['#e5e7ff','#fce4ec','#ffe2d9'][i]};border:2px solid ${['#9ba5f2','#e88ca8','#e8a48a'][i]}"><span>${a}</span><strong>${b}</strong></div>`).join('');
+ const cardsCenario=(brutoC,descontosC,liquidoC)=>[
+  ['Salário bruto',brl(brutoC)],['Descontos totais',brl(descontosC)],['Salário líquido estimado',brl(liquidoC)]
+ ].map(([a,b],i)=>`<div class="metric"${i===0?' style="background:#e7effb;border-color:#a8c3e8"':i===1?' style="background:#fff1d2;border-color:#e5c879"':' style="background:#dff3e5;border-color:#9bcfab"'}><span>${a}</span><strong>${b}</strong></div>`).join('');
+ $('cenarioNormal').innerHTML=cardsCenario(brutoComAdicionais,totalDesc,liquido);
+ $('cenarioFerias').innerHTML=cardsCenario(brutoSemExtrasSemNoturno,descSemExtras,liquidoSemExtras);
+ $('diferencaCenarios').innerHTML=cardsCenario(brutoComAdicionais-brutoSemExtrasSemNoturno,totalDesc-descSemExtras,liquido-liquidoSemExtras).replaceAll('Salário bruto','Diferença no bruto').replaceAll('Descontos totais','Diferença nos descontos').replaceAll('Salário líquido estimado','Diferença no líquido');
+ $('detalheDescontos').innerHTML=[
+  ['IPM Previdência',brl(descPrev)],['IPM Saúde',brl(descSaude)],['Sindifort',brl(descSind)],
+  ['IRRF estimado',brl(irrf)],['Outros descontos',brl(descOutros)],['Total dos descontos',brl(totalDesc)]
+ ].map(([a,b],i)=>`<div class="metric"${i===5?' style="background:#fff1d2;border-color:#e5c879"':''}><span>${a}</span><strong>${b}</strong></div>`).join('');
+ $('composicaoEtapa').innerHTML=[
+  ['Etapa consultada',o.label],['Vencimento-base',brl(o.vb)],['GEEF',brl(o.gee)],['ITA',brl(o.ita)],
+  ['GAT',brl(o.gat)],['Anuênio',brl(o.anu)],['Anuênio (%)',pformat(o.anuPct)],
+  ['Promoção / vantagem fixa',brl(o.promocao)],['Progressão adicional',brl(o.progressao)],
+  ['Remuneração regular',brl(o.regular)],['Salário-família',brl(n('familia'))],
+  ['Horas extras diurnas',brl(totD)],['Adicional noturno normal',brl(totHN)],
+  ['Horas extras noturnas',brl(totEN)],['Bruto com adicionais informados',brl(bruto)]
+ ].map(([a,b],i)=>`<div class="metric"${i===14?' style="background:#e7effb;border-color:#a8c3e8"':''}><span>${a}</span><strong>${b}</strong></div>`).join('');
+ if($('comparacaoSemExtras')) $('comparacaoSemExtras').innerHTML=[
+  ['Bruto sem horas extras/adicionais variáveis',brl(brutoSemExtrasSemNoturno)],
+  ['Descontos estimados nessa situação',brl(descSemExtras)],
+  ['Líquido sem horas extras/adicional noturno',brl(liquidoSemExtras)],
+  ['Bruto com adicionais informados',brl(brutoComAdicionais)],
+  ['Líquido com adicionais informados',brl(liquido)]
+ ].map(([a,b],i)=>`<div class="metric"${[2,4].includes(i)?' style="background:#dff3e5;border-color:#9bcfab"':''}><span>${a}</span><strong>${b}</strong></div>`).join('');
+ const metrics=[['Etapa selecionada',o.label],['Remuneração regular da etapa',brl(o.regular)],['Base usada para calcular a hora',brl(o.regular)],['Hora normal',brl(hora)],['Adicional noturno por hora',brl(adNot)],['Hora noturna com adicional',brl(noturna)],['Hora extra diurna (50%)',brl(extraD)],['Hora extra noturna (50% + adicional)',brl(extraN)],['Quantidade de horas extras diurnas',n('he50')+' h'],['Total das horas extras diurnas',brl(totD)],['Quantidade de horas noturnas normais',n('hn')+' h'],['Total do adicional noturno normal',brl(totHN)],['Quantidade de horas extras noturnas',n('hen')+' h'],['Total das horas extras noturnas',brl(totEN)],['Salário-família',brl(n('familia'))],['TOTAL BRUTO com adicionais e extras',brl(bruto)],['Base IPM Previdência',brl(o.regular)],['IPM Previdência',brl(descPrev)],['Base IPM Saúde (bruto − salário-família)',brl(Math.max(0,bruto-n('familia')))],['IPM Saúde',brl(descSaude)],['Sindifort (sobre vencimento-base)',brl(descSind)],['Dependentes para IRRF',String(dependentes)],['Dedução por dependentes no IRRF',brl(dedDependentes)],['Base de cálculo do IRRF',brl(baseIR)],['IRRF: 27,5% da base − R$ 908,73',brl(irrf)],['Outros descontos fixos',brl(descOutros)],['TOTAL DE DESCONTOS',brl(totalDesc)],['SALÁRIO LÍQUIDO ESTIMADO',brl(liquido)]];
+ $('horas').innerHTML=metrics.map(([a,b],i)=>`<div class="metric"${[15,26,27].includes(i)?' style="background:#edf5fb;border-color:#9db7ca"':''}><span>${a}</span><strong>${b}</strong></div>`).join('');
+}
+
+// Camada de segurança: evita que uma falha inesperada interrompa silenciosamente a página.
+function calc(){
+  try {
+    calcInterno();
+    const erro=$('erroValidacao');
+    if(erro){ erro.style.display='none'; erro.textContent=''; }
+  } catch (e) {
+    const erro=$('erroValidacao');
+    if(erro){
+      erro.style.display='block';
+      erro.textContent='Não foi possível concluir o cálculo. Confira os campos preenchidos e tente novamente. Detalhe técnico: '+(e && e.message ? e.message : 'erro inesperado');
+    }
+    console.error('Erro no cálculo do Simulador PCCS AMC:',e);
+  }
+}
+
+const defaults={vb:'',posse:'',motociclista:'nao',geeMoto:'15',coordenador:'nao',geeCoord:'25',recebeITA:'nao',ita:'',gat1:'50',gat2:'75',gat3:'100',gee:'0',itaCalculado:'0',anuAtual:'',promocao:'',progressao:'',inflacao27:'',inflacao28:'',etapaCalculo:'0',divisor:'180',adn:'20',he50:'',hen:'',hn:'',familia:'',prev:'14',saude:'2',sindifort:'2',outrosDescontos:'',dependentesIR:''};
+$('motociclista').addEventListener('change',()=>{atualizarCondicoes();calc();});
+ $('coordenador').addEventListener('change',()=>{atualizarCondicoes();calc();});
+ $('recebeITA').addEventListener('change',()=>{if($('recebeITA').value==='sim' && $('ita').value==='') $('ita').value=''; atualizarCondicoes();calc();});
+ $('geeMoto').addEventListener('change',calc);
+ $('ita').addEventListener('input',()=>{atualizarCondicoes();calc();}); $('ita').addEventListener('change',()=>{atualizarCondicoes();calc();});
+ atualizarCondicoes();
+ $('baseAtualPCCS').addEventListener('input',calcEnquadramentoPCCS);$('indicePCCS').addEventListener('input',calcEnquadramentoPCCS);$('turmaPCCS').addEventListener('change',calcEnquadramentoPCCS);calcEnquadramentoPCCS();
+$('posse').addEventListener('blur',()=>{
+ const v=String($('posse').value||'').trim();
+ const iso=dataPosseISO(v);
+ if(iso){const [a,m,d]=iso.split('-');$('posse').value=`${d}/${m}/${a}`;}
+});
+ $('posse').addEventListener('input',()=>{
+ const el=$('posse'); const digits=el.value.replace(/\D/g,'').slice(0,8);
+ if(digits.length>=5) el.value=digits.slice(0,2)+'/'+digits.slice(2,4)+'/'+digits.slice(4);
+ else if(digits.length>=3) el.value=digits.slice(0,2)+'/'+digits.slice(2);
+ else el.value=digits;
+ });
+ $('calcular').addEventListener('click',calc);$('restaurar').addEventListener('click',()=>{for(const [k,v] of Object.entries(defaults)){if($(k)) $(k).value=v;}$('baseAtualPCCS').value='';$('indicePCCS').value='2.65';$('posse').value='';$('familia').value='';atualizarCondicoes();calcEnquadramentoPCCS();calc();});document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));$('posse').addEventListener('change',calc);calc();
+
+const _dataIngressoEl=document.getElementById('dataIngresso'); if(_dataIngressoEl){_dataIngressoEl.addEventListener('input',()=>{if(typeof calc==='function')calc();});_dataIngressoEl.addEventListener('change',()=>{if(typeof calc==='function')calc();});}
+
+// Painéis expansíveis por botão, com estado explícito para navegadores móveis e visualizadores de HTML.
+document.querySelectorAll('.toggle-button[aria-controls]').forEach(button=>{
+  const panel=document.getElementById(button.getAttribute('aria-controls'));
+  if(!panel) return;
+  button.addEventListener('click',event=>{
+    event.preventDefault();
+    const opening=button.getAttribute('aria-expanded')!=='true';
+    button.setAttribute('aria-expanded',String(opening));
+    panel.hidden=!opening;
+  });
+});
+
+// Impressão/PDF: chamar diretamente durante o toque e mostrar alternativa para visualizadores que bloqueiam window.print().
+(function(){
+ const btn=document.getElementById('gerarPDF');
+ if(!btn) return;
+ btn.addEventListener('click',function(){
+   document.querySelectorAll('details').forEach(function(d){d.open=true;});
+   document.querySelectorAll('.toggle-button[aria-controls]').forEach(function(b){
+     const panel=document.getElementById(b.getAttribute('aria-controls'));
+     if(panel){panel.hidden=false;b.setAttribute('aria-expanded','true');}
+   });
+   const aviso=document.getElementById('avisoPDF');
+   try { window.focus(); (window.PCCSPrinter && typeof window.PCCSPrinter.printPage === "function") ? window.PCCSPrinter.printPage() : window.print(); } catch(e) {}
+   if(aviso) aviso.style.display='block';
+ });
+})();
+</script></body></html>
